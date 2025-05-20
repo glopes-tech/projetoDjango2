@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <h1>Perguntas da Enquete: {{ enquete.titulo }}</h1>
+    <ul>
+        {% for pergunta in perguntas %}
+            <li><a href="{% url 'enquete:pergunta_detail' pergunta.pk %}">{{ pergunta.texto }}</a> ({{ pergunta.get_tipo_display }})</li>
+        {% empty %}
+            <li>Nenhuma pergunta nesta enquete.</li>
+        {% endfor %}
+    </ul>
+    <a href="{% url 'enquete:pergunta_criar' enquete.id %}" class="btn btn-primary">Adicionar Nova Pergunta</a>
+    <a href="{% url 'enquete:enquete_detail' enquete.id %}" class="btn btn-secondary">Voltar para a Enquete</a>
+{% endblock %}

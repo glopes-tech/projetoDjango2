@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <h1>{% if pergunta_form.instance.pk %}Editar Pergunta{% else %}Criar Pergunta para "{{ enquete.titulo }}"{% endif %}</h1>
+    <form method="post">
+        {% csrf_token %}
+        {% include 'form_template.html' %}
+        <h2>Opções:</h2>
+        {{ opcao_formset.management_form }}
+        {% for form in opcao_formset %}
+            <div class="opcao-form">
+                {{ form.as_p }}
+            </div>
+        {% endfor %}
+        <button type="submit" class="btn btn-primary">Salvar</button>
+        <a href="{% url 'enquete:enquete_detail' enquete.id %}" class="btn btn-secondary">Cancelar</a>
+    </form>
+{% endblock %}

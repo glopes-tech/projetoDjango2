@@ -1,0 +1,63 @@
+{# enquete/templates/enquete/responder_enquete.html #}
+
+{% extends 'base.html' %}
+
+{% block content %}
+    <div class="container mt-4">
+        <h1 class="mb-3">{{ enquete.titulo }}</h1>
+        <p class="lead">{{ enquete.descricao }}</p>
+
+        <form method="post" action="{% url 'enquete:processar_respostas' enquete.id %}">
+            {% csrf_token %}
+
+            {# Exibe mensagens de sucesso ou erro do sistema de mensagens do Django #}
+            {% if messages %}
+                <ul class="list-unstyled">
+                    {% for message in messages %}
+                        <li class="alert {% if message.tags %}alert-{{ message.tags }}{% else %}alert-info{% endif %}">{{ message }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+
+            {% for pergunta_form_data in perguntas_forms %}
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h4 class="mb-0">{{ forloop.counter }}. {{ pergunta_form_data.pergunta.texto }}</h4>
+                    </div>
+                    <div class="card-body">
+                        {% if pergunta_form_data.pergunta.tipo == Pergunta.UNICA_ESCOLHA %}
+                            {# Para única escolha, o as_p renderiza o label e os radios #}
+                            {{ pergunta_form_data.form.as_p }}
+                        {% elif pergunta_form_data.pergunta.tipo == Pergunta.MULTIPLA_ESCOLHA %}
+                            {# Para múltipla escolha, renderize o campo de opções e os erros separadamente #}
+                            <div class="form-group">
+                                <label>{{ pergunta_form_data.form.opcoes.label }}</label>
+                                {# O widget CheckboxSelectMultiple já renderiza as opções como checkboxes #}
+                                {{ pergunta_form_data.form.opcoes }}
+                                {% if pergunta_form_data.form.opcoes.errors %}
+                                    <div class="text-danger">
+                                        {% for error in pergunta_form_data.form.opcoes.errors %}
+                                            <p>{{ error }}</p>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                        {# Erros gerais do formulário (não associados a um campo específico) #}
+                        {% if pergunta_form_data.form.non_field_errors %}
+                            <div class="text-danger">
+                                {% for error in pergunta_form_data.form.non_field_errors %}
+                                    <p>{{ error }}</p>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            {% empty %}
+                <p class="alert alert-info">Esta enquete não possui perguntas ativas no momento.</p>
+            {% endfor %}
+
+            <button type="submit" class="btn btn-primary mt-3">Enviar Enquete</button>
+        </form>
+    </div>
+{% endblock %}

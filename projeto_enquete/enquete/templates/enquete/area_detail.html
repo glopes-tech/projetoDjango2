@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <h1>{{ area.nome }}</h1>
+    <p>{{ area.descricao }}</p>
+    <p>Total de Enquetes: {{ area.total_enquetes }}</p>
+    <p>Enquetes Ativas: {{ area.enquetes_ativas }}</p>
+    <a href="{% url 'enquete:area_editar' area.slug %}" class="btn btn-primary">Editar Área</a>
+    <a href="{% url 'enquete:area_delete' area.slug %}" class="btn btn-danger">Deletar Área</a>
+    <h2>Enquetes nesta área:</h2>
+    <ul>
+        {% for enquete in area.enquete_set.all %}
+            <li><a href="{% url 'enquete:enquete_detail' enquete.pk %}">{{ enquete.titulo }}</a></li>
+        {% empty %}
+            <li>Nenhuma enquete nesta área.</li>
+        {% endfor %}
+    </ul>
+    <a href="{% url 'enquete:enquete_criar' %}?area={{ area.id }}" class="btn btn-success">Criar Enquete</a>
+{% endblock %}

@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <h1>Enquetes</h1>
+    <ul>
+        {% for enquete in enquetes %}
+            <li><a href="{% url 'enquete:enquete_detail' enquete.pk %}">{{ enquete.titulo }}</a> (Área: {{ enquete.area.nome }}) 
+                <a href="{% url 'enquete:responder_enquete' enquete.id %}" class="btn btn-primary">Responder</a></li>
+                
+        {% empty %}
+            <li>Nenhuma enquete cadastrada.</li>
+        {% endfor %}
+    </ul>
+    <a href="{% url 'enquete:enquete_criar' %}" class="btn btn-primary">Criar Nova Enquete</a>
+{% endblock %}

@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <h1>{{ enquete.titulo }}</h1>
+    <p>{{ enquete.descricao }}</p>
+    <p>Data de Criação: {{ enquete.data_criacao }}</p>
+    <p>Ativa: {% if enquete.ativa %}Sim{% else %}Não{% endif %}</p>
+    <p>Área: <a href="{% url 'enquete:area_detail' enquete.area.slug %}">{{ enquete.area.nome }}</a></p>
+    <p>Tecnologias:
+        {% for tecnologia in enquete.tecnologias.all %}
+            {{ tecnologia.nome }}{% if not forloop.last %}, {% endif %}
+        {% empty %}
+            Nenhuma tecnologia associada.
+        {% endfor %}
+    </p>
+    <p>Total de Perguntas: {{ enquete.total_perguntas }}</p>
+    <p>Perguntas Ativas: {{ enquete.perguntas_ativas }}</p>
+    <a href="{% url 'enquete:enquete_editar' enquete.pk %}" class="btn btn-primary">Editar Enquete</a>
+    <a href="{% url 'enquete:enquete_delete' enquete.pk %}" class="btn btn-danger">Deletar Enquete</a>
+    <a href="{% url 'enquete:pergunta_criar' enquete.id %}" class="btn btn-success">Adicionar Pergunta</a>
+    <h2>Perguntas:</h2>
+    <ul>
+        {% for pergunta in enquete.pergunta_set.all %}
+            <li><a href="{% url 'enquete:pergunta_detail' pergunta.pk %}">{{ pergunta.texto|truncatechars:50 }}</a></li>
+        {% empty %}
+            <li>Nenhuma pergunta nesta enquete.</li>
+        {% endfor %}
+    </ul>
+    <a href="{% url 'enquete:pergunta_list' enquete.id %}" class="btn btn-info">Ver Todas as Perguntas</a>
+{% endblock %}

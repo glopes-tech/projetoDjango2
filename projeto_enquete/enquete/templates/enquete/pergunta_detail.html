@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <h1>{{ pergunta.texto }}</h1>
+    <p>Tipo: {{ pergunta.get_tipo_display }}</p>
+    <p>Enquete: <a href="{% url 'enquete:enquete_detail' pergunta.enquete.pk %}">{{ pergunta.enquete.titulo }}</a></p>
+    {% if pergunta.tecnologia %}
+        <p>Tecnologia: {{ pergunta.tecnologia.nome }}</p>
+    {% endif %}
+    <p>Ativa: {% if pergunta.ativa %}Sim{% else %}Não{% endif %}</p>
+    <p>Total de Opções: {{ pergunta.total_opcoes }}</p>
+    <p>Opções Ativas: {{ pergunta.opcoes_ativas }}</p>
+    <a href="{% url 'enquete:pergunta_editar' pergunta.pk %}" class="btn btn-primary">Editar Pergunta</a>
+    <a href="{% url 'enquete:pergunta_delete' pergunta.pk %}" class="btn btn-danger">Deletar Pergunta</a>
+    <a href="{% url 'enquete:opcao_criar' pergunta.id %}" class="btn btn-success">Adicionar Opção</a>
+    <h2>Opções:</h2>
+    <ul>
+        {% for opcao in opcoes %}
+            <li>{{ opcao.texto }} <a href="{% url 'enquete:opcao_editar' opcao.pk %}" class="btn btn-sm btn-outline-primary">Editar</a> <a href="{% url 'enquete:opcao_delete' opcao.pk %}" class="btn btn-sm btn-outline-danger">Deletar</a></li>
+        {% empty %}
+            <li>Nenhuma opção cadastrada.</li>
+        {% endfor %}
+    </ul>
+    <a href="{% url 'enquete:enquete_detail' pergunta.enquete.pk %}" class="btn btn-secondary">Voltar para a Enquete</a>
+{% endblock %}

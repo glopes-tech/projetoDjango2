@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <h1>Áreas de Programação</h1>
+    <ul>
+        {% for area in areas %}
+            <li><a href="{% url 'enquete:area_detail' area.slug %}">{{ area.nome }}</a></li>
+        {% empty %}
+            <li>Nenhuma área cadastrada.</li>
+        {% endfor %}
+    </ul>
+    <a href="{% url 'enquete:area_criar' %}" class="btn btn-primary">Criar Nova Área</a>
+{% endblock %}

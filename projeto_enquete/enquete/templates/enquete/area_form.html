@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <h1>{% if form.instance.pk %}Editar Área{% else %}Criar Área{% endif %}</h1>
+    <form method="post">
+        {% csrf_token %}
+        {% include 'form_template.html' %}
+        <button type="submit" class="btn btn-primary">Salvar</button>
+        <a href="{% url 'enquete:area_list' %}" class="btn btn-secondary">Cancelar</a>
+    </form>
+{% endblock %}
