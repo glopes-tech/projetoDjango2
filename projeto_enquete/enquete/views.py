@@ -130,11 +130,11 @@ def pergunta_delete(request, pk):
 def opcao_create(request, pergunta_id):
     pergunta = get_object_or_404(Pergunta, id=pergunta_id)
     if request.method == 'POST':
-        form = OpcaoForm(request.POST) # Não passe initial aqui, o save(commit=False) é o correto
+        form = OpcaoForm(request.POST) 
         if form.is_valid():
             try:
                 opcao = form.save(commit=False)
-                opcao.pergunta = pergunta # Associe a pergunta antes de salvar
+                opcao.pergunta = pergunta 
                 opcao.save()
                 messages.success(request, f"Opção '{opcao.texto}' criada com sucesso!")
                 return redirect('enquete:pergunta_detail', pk=pergunta.id)
@@ -143,7 +143,7 @@ def opcao_create(request, pergunta_id):
             except Exception as e:
                 messages.error(request, f"Ocorreu um erro ao criar a opção: {e}")
     else:
-        form = OpcaoForm() # Não passe initial aqui, o formulário é para criar uma nova opção
+        form = OpcaoForm() 
     return render(request, 'enquete/opcao_form.html', {'form': form, 'pergunta': pergunta})
 
 def opcao_edit(request, pk):
@@ -178,30 +178,28 @@ def responder_enquete(request, enquete_id):
 
     perguntas_forms = []
     for pergunta in perguntas:
-        form = None # Inicializa form para garantir que sempre tenha um valor
+        form = None
         if pergunta.tipo == Pergunta.UNICA_ESCOLHA:
             if request.method == 'POST':
                 form = RespostaForm(request.POST, pergunta=pergunta, prefix=f'pergunta_{pergunta.id}')
-            else: # GET request
+            else: 
                 form = RespostaForm(pergunta=pergunta, prefix=f'pergunta_{pergunta.id}')
         elif pergunta.tipo == Pergunta.MULTIPLA_ESCOLHA:
             if request.method == 'POST':
                 form = MultiplaEscolhaRespostaForm(request.POST, pergunta=pergunta, prefix=f'pergunta_{pergunta.id}')
-            else: # GET request
+            else: 
                 form = MultiplaEscolhaRespostaForm(pergunta=pergunta, prefix=f'pergunta_{pergunta.id}')
         else:
-            # Lidar com tipos de pergunta desconhecidos ou inativos se necessário
-            # Por exemplo, você pode pular esta pergunta ou adicionar uma mensagem de erro
             messages.warning(request, f"Tipo de pergunta desconhecido ou inativo para: {pergunta.texto}")
-            continue # Pula para a próxima pergunta
+            continue 
 
-        if form: # Adiciona apenas se um formulário válido foi criado
+        if form: 
             perguntas_forms.append({'pergunta': pergunta, 'form': form})
 
     context = {
         'enquete': enquete,
         'perguntas_forms': perguntas_forms,
-        'Pergunta': Pergunta, # Adiciona a classe Pergunta ao contexto para acesso às constantes
+        'Pergunta': Pergunta, 
     }
     return render(request, 'enquete/responder_enquete.html', context)
 
@@ -216,17 +214,16 @@ def processar_respostas(request, enquete_id):
             try:
                 aluno = request.user.aluno
             except Aluno.DoesNotExist:
-                # Criar um perfil de aluno se o usuário estiver logado mas não tiver um
                 messages.info(request, "Seu perfil de aluno não foi encontrado. Criando um para você.")
                 aluno = Aluno.objects.create(user=request.user, nome=request.user.username)
             except Exception as e:
                 messages.error(request, f"Erro ao tentar obter ou criar perfil de aluno: {e}. As respostas serão salvas sem vinculação a um aluno específico.")
-                aluno = None # Garante que aluno seja None em caso de outros erros
+                aluno = None 
         
         respostas_validas = True
         
         for pergunta in perguntas:
-            form = None # Inicializa form aqui também
+            form = None 
             if pergunta.tipo == Pergunta.UNICA_ESCOLHA:
                 form = RespostaForm(request.POST, pergunta=pergunta, prefix=f'pergunta_{pergunta.id}')
                 if form.is_valid():
@@ -253,15 +250,12 @@ def processar_respostas(request, enquete_id):
                     messages.error(request, f"Erro na pergunta '{pergunta.texto}': {form.errors.as_text()}") # Use .as_text() para melhor formatação
             else:
                 messages.warning(request, f"Tipo de pergunta desconhecido ou inativo para: {pergunta.texto}. Nenhuma resposta foi processada para esta pergunta.")
-                # Não altera respostas_validas pois a pergunta foi intencionalmente pulada
         
         if respostas_validas:
             messages.success(request, "Suas respostas foram salvas com sucesso!")
             return redirect('enquete:enquete_list') 
         else:
             messages.error(request, "Houve erros ao salvar suas respostas. Por favor, verifique.")
-            # Para re-renderizar a página com os erros, chame responder_enquete com o request POST
-            # Isso permitirá que os formulários sejam pré-preenchidos e mostrem os erros
-            return responder_enquete(request, enquete_id) # ESSENCIAL: re-chamar com request
+            return responder_enquete(request, enquete_id)
 
     return HttpResponseBadRequest("Método não permitido.")

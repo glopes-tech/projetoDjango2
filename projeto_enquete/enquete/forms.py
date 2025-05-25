@@ -33,7 +33,6 @@ class OpcaoForm(EstiloFormMixin, forms.ModelForm):
     class Meta:
         model = Opcao
         fields = ['texto', 'ativa', 'ordem', 'peso']
-        # 'pergunta' não precisa ser HiddenInput aqui se for setado na view
         # widgets = {
         #     'pergunta': forms.HiddenInput(),
         # }
@@ -41,19 +40,15 @@ class OpcaoForm(EstiloFormMixin, forms.ModelForm):
 OpcaoFormSet = inlineformset_factory(Pergunta, Opcao, form=OpcaoForm, extra=3, can_delete=True)
 
 class RespostaForm(forms.Form):
-    # RadioSelect para única escolha
     opcao = forms.ModelChoiceField(queryset=Opcao.objects.none(), widget=forms.RadioSelect, label="Opção")
 
     def __init__(self, pergunta, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Filtra as opções pela pergunta específica
         self.fields['opcao'].queryset = pergunta.opcao_set.filter(ativa=True)
 
 class MultiplaEscolhaRespostaForm(forms.Form):
-    # CheckboxSelectMultiple para múltipla escolha
     opcoes = forms.ModelMultipleChoiceField(queryset=Opcao.objects.none(), widget=forms.CheckboxSelectMultiple, label="Opções")
 
     def __init__(self, pergunta, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Filtra as opções pela pergunta específica
         self.fields['opcoes'].queryset = pergunta.opcao_set.filter(ativa=True)

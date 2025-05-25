@@ -21,7 +21,7 @@ class EnqueteAdmin(admin.ModelAdmin):
 class AreaAdmin(admin.ModelAdmin):
     list_display = ('nome', 'descricao')
     search_fields = ('nome',)
-    prepopulated_fields = {'slug': ('nome',)}  # Preenche o slug automaticamente
+    prepopulated_fields = {'slug': ('nome',)}
 
 class AlunoAdmin(admin.ModelAdmin):
     list_display = ('nome', 'email', 'data_inscricao', 'nivel')
@@ -44,7 +44,7 @@ class MultiplaEscolhaRespostaAdmin(admin.ModelAdmin):
 admin.site.register(Area, AreaAdmin)
 admin.site.register(Enquete, EnqueteAdmin)
 admin.site.register(Pergunta, PerguntaAdmin)
-admin.site.register(Opcao)  # Registro básico, sem personalização
+admin.site.register(Opcao)  
 admin.site.register(Aluno, AlunoAdmin)
 admin.site.register(Resposta, RespostaAdmin)
 admin.site.register(MultiplaEscolhaResposta, MultiplaEscolhaRespostaAdmin)
