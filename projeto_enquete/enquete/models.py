@@ -55,6 +55,7 @@ class Enquete(models.Model):
     titulo = models.CharField(max_length=200)
     descricao = models.TextField(blank=True, null=True)
     data_criacao = models.DateTimeField(auto_now_add=True)
+    data_expiracao = models.DateTimeField(null=True, blank=True)
     ativa = models.BooleanField(default=True)
     area = models.ForeignKey(Area, on_delete=models.CASCADE)
     tecnologias = models.ManyToManyField(Tecnologia, blank=True)
