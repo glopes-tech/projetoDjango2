@@ -39,7 +39,7 @@ class PerguntaSerializer(serializers.ModelSerializer):
         read_only_fields = ['enquete'] 
 
 class EnqueteSerializer(serializers.ModelSerializer):
-    perguntas = PerguntaSerializer(many=True, read_only=True, source='pergunta_set') 
+    perguntas = PerguntaSerializer(many=True, read_only=True, source='perguntas.all') 
     area = AreaSerializer(read_only=True)
     tecnologias = TecnologiaSerializer(many=True, read_only=True)
 

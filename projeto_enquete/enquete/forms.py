@@ -39,16 +39,37 @@ class OpcaoForm(EstiloFormMixin, forms.ModelForm):
 
 OpcaoFormSet = inlineformset_factory(Pergunta, Opcao, form=OpcaoForm, extra=3, can_delete=True)
 
-class RespostaForm(forms.Form):
-    opcao = forms.ModelChoiceField(queryset=Opcao.objects.none(), widget=forms.RadioSelect, label="Opção")
-
-    def __init__(self, pergunta, *args, **kwargs):
+class RespostaForm(forms.Form): 
+    def __init__(self, *args, **kwargs):
+        # O argumento 'pergunta' é extraído dos kwargs.
+        # Isso garante que 'pergunta' não seja passado para o __init__ do formulário base do Django.
+        self.pergunta = kwargs.pop('pergunta') 
         super().__init__(*args, **kwargs)
-        self.fields['opcao'].queryset = pergunta.opcao_set.filter(ativa=True)
 
-class MultiplaEscolhaRespostaForm(forms.Form):
-    opcoes = forms.ModelMultipleChoiceField(queryset=Opcao.objects.none(), widget=forms.CheckboxSelectMultiple, label="Opções")
+        # O nome do campo é dinâmico e depende do ID da pergunta para evitar conflitos
+        field_name = f'pergunta_{self.pergunta.id}'
 
-    def __init__(self, pergunta, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields['opcoes'].queryset = pergunta.opcao_set.filter(ativa=True)
+        if self.pergunta.tipo == Pergunta.UNICA_ESCOLHA:
+            opcoes_disponiveis = self.pergunta.opcao_set.filter(ativa=True)
+            self.fields[field_name] = forms.ModelChoiceField(
+                queryset=opcoes_disponiveis,
+                widget=forms.RadioSelect,
+                empty_label=None, # Garante que uma opção deve ser selecionada
+                required=True,
+                label=self.pergunta.texto # O label do campo é o texto da pergunta
+            )
+        elif self.pergunta.tipo == Pergunta.MULTIPLA_ESCOLHA:
+            opcoes_disponiveis = self.pergunta.opcao_set.filter(ativa=True)
+            self.fields[field_name] = forms.ModelMultipleChoiceField(
+                queryset=opcoes_disponiveis,
+                widget=forms.CheckboxSelectMultiple,
+                required=True, # Garante que pelo menos uma opção deve ser selecionada
+                label=self.pergunta.texto # O label do campo é o texto da pergunta
+            )
+
+#class MultiplaEscolhaRespostaForm(forms.Form):
+#    opcoes = forms.ModelMultipleChoiceField(queryset=Opcao.objects.none(), widget=forms.CheckboxSelectMultiple, label="Opções")
+
+#    def __init__(self, pergunta, *args, **kwargs):
+#        super().__init__(*args, **kwargs)
+#        self.fields['opcoes'].queryset = pergunta.opcao_set.filter(ativa=True)

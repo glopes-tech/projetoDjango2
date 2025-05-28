@@ -1,21 +1,57 @@
-{% extends 'base.html' %}
+{% extends 'base.html' %} {# Certifique-se que 'base.html' é o nome do seu template base #}
+
 {% block title %}Responder Enquete: {{ enquete.titulo }}{% endblock %}
+
 {% block content %}
+<div class="container mt-5">
     <h1>{{ enquete.titulo }}</h1>
     <p>{{ enquete.descricao }}</p>
 
+    {# Bloco para exibir mensagens do Django (success, error, warning, info) #}
+    {% if messages %}
+        <div class="messages mt-3">
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
     <form method="post" class="mt-3">
         {% csrf_token %}
-        {% for field in form %}
-            <div class="form-group">
-                <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
-                {{ field }}
-                {% if field.errors %}
-                    <div class="alert alert-danger mt-1">{{ field.errors }}</div>
-                {% endif %}
+        {% for item in perguntas_forms %}
+            <div class="mb-4 p-3 border rounded shadow-sm"> {# Adicionado um estilo leve para cada pergunta #}
+                <h5>{{ item.pergunta.texto }}</h5>
+                <div class="form-group">
+                    {# Renderiza o formulário da pergunta. item.form.as_p irá renderizar os campos e seus labels #}
+                    {{ item.form.as_p }}
+                    
+                    {# Exibir erros específicos do formulário da pergunta, se houver #}
+                    {% if item.form.errors %}
+                        <div class="alert alert-danger mt-2" role="alert">
+                            {# Erros de campos específicos #}
+                            {% for field in item.form %}
+                                {% if field.errors %}
+                                    <strong>{{ field.label }}:</strong>
+                                    {% for error in field.errors %}
+                                        <p class="mb-0">{{ error }}</p>
+                                    {% endfor %}
+                                {% endif %}
+                            {% endfor %}
+                            {# Erros não relacionados a campos específicos (gerais do formulário) #}
+                            {% if item.form.non_field_errors %}
+                                {% for error in item.form.non_field_errors %}
+                                    <p class="mb-0">{{ error }}</p>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
             </div>
         {% endfor %}
-        <button type="submit" class="btn btn-primary">Enviar Respostas</button>
+        <button type="submit" class="btn btn-primary mt-3">Enviar Respostas</button>
     </form>
-    {# <a href="{% url 'listar_enquetes' %}" class="btn btn-secondary mt-3">Voltar para a lista de enquetes</a> #}
+</div>
 {% endblock %}

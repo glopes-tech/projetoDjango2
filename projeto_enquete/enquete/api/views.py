@@ -52,7 +52,7 @@ class EnqueteViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'], permission_classes=[AllowAny])
     def responder(self, request, pk=None):
         enquete = self.get_object()
-        perguntas = enquete.pergunta_set.filter(ativa=True).order_by('id')
+        perguntas = enquete.perguntas.filter(ativa=True).order_by('id')
         
         aluno = None
         if request.user.is_authenticated:

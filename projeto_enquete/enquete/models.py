@@ -44,7 +44,7 @@ class Tecnologia(models.Model):
     def total_perguntas(self):
         total = 0
         for enquete in self.enquete_set.all():
-            total += enquete.pergunta_set.filter(tecnologia=self).count()
+            total += enquete.perguntas.all.filter(tecnologia=self).count()
         return total
 
     @property
@@ -70,11 +70,11 @@ class Enquete(models.Model):
 
     @property
     def total_perguntas(self):
-        return self.pergunta_set.count()
+        return self.perguntas.count()
 
     @property
     def perguntas_ativas(self):
-        return self.pergunta_set.filter(ativa=True).count()
+        return self.perguntas.filter(ativa=True).count()
 
 class Pergunta(models.Model):
     UNICA_ESCOLHA = 'UNICA_ESCOLHA'
@@ -86,8 +86,8 @@ class Pergunta(models.Model):
     ]
     
     texto = models.TextField()
-    tipo = models.CharField(max_length=20, choices=[('unica', 'Única Escolha'), ('multipla', 'Múltipla Escolha')])
-    enquete = models.ForeignKey(Enquete, on_delete=models.CASCADE)
+    tipo = models.CharField(max_length=20, choices=TIPO_CHOICES)
+    enquete = models.ForeignKey(Enquete, on_delete=models.CASCADE, related_name='perguntas')
     tecnologia = models.ForeignKey(Tecnologia, on_delete=models.SET_NULL, null=True, blank=True)
     ativa = models.BooleanField(default=True)
 

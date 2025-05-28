@@ -5,6 +5,8 @@ app_name = 'enquete'
 
 urlpatterns = [
 
+    path('', views.home, name='home'),
+    
     # URLs para Área (Classes)
     path('areas/', views.AreaListView.as_view(), name='area_list'),
     path('areas/criar/', views.AreaCreateView.as_view(), name='area_criar'),
@@ -26,7 +28,7 @@ urlpatterns = [
     path('perguntas/deletar/<int:pk>/', views.pergunta_delete, name='pergunta_delete'),
     path('enquetes/<int:enquete_id>/perguntas/criar/', views.pergunta_create, name='pergunta_criar'),
     path('enquetes/<int:enquete_id>/responder/', views.responder_enquete, name='responder_enquete'),
-    path('enquetes/<int:enquete_id>/processar_respostas/', views.processar_respostas, name='processar_respostas'),
+    path('enquetes/<int:enquete_id>/processar_resposta/', views.processar_resposta, name='processar_resposta'),
 
     # URLs para Opcao (Funções)
     path('perguntas/<int:pergunta_id>/opcoes/criar/', views.opcao_create, name='opcao_criar'),

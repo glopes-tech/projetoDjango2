@@ -3,10 +3,10 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse, reverse_lazy
 from django.views import generic
 from django.forms import formset_factory
-from .models import Enquete, Pergunta, Opcao, Area, Resposta, MultiplaEscolhaResposta, Aluno # Importe Aluno
-from .forms import EnqueteForm, OpcaoForm, PerguntaForm, OpcaoFormSet, AreaForm, RespostaForm, MultiplaEscolhaRespostaForm
+from .models import Enquete, Pergunta, Opcao, Area, Resposta, MultiplaEscolhaResposta, Aluno
+from .forms import EnqueteForm, OpcaoForm, PerguntaForm, AreaForm, RespostaForm
 from django.contrib import messages
-from django.db import IntegrityError
+from django.db import IntegrityError, transaction
 #from django.contrib.auth.decorators import login_required
 
 def home(request):
@@ -47,7 +47,7 @@ def enquete_list(request):
 
 def enquete_detail(request, pk):
     enquete = get_object_or_404(Enquete, pk=pk)
-    perguntas = enquete.pergunta_set.filter(ativa=True).order_by('id')
+    perguntas = enquete.perguntas.filter(ativa=True).order_by('id')
     return render(request, 'enquete/enquete_detail.html', {'enquete': enquete, 'perguntas': perguntas})
 
 def enquete_create(request):
@@ -84,7 +84,7 @@ def enquete_delete(request, pk):
 # Views para Pergunta (Funções)
 def pergunta_list(request, enquete_id):
     enquete = get_object_or_404(Enquete, pk=enquete_id)
-    perguntas = enquete.pergunta_set.all()
+    perguntas = enquete.perguntas.all()
     return render(request, 'enquete/pergunta_list.html', {'enquete': enquete, 'perguntas': perguntas})
 
 def pergunta_detail(request, pk):
@@ -126,7 +126,7 @@ def pergunta_delete(request, pk):
         return redirect('enquete:enquete_detail', pk=enquete_id)
     return render(request, 'enquete/confirm_delete.html', {'object': pergunta})
 
-# Views para Opcao (Funções)
+
 def opcao_create(request, pergunta_id):
     pergunta = get_object_or_404(Pergunta, id=pergunta_id)
     if request.method == 'POST':
@@ -174,88 +174,89 @@ def opcao_delete(request, pk):
 
 def responder_enquete(request, enquete_id):
     enquete = get_object_or_404(Enquete, pk=enquete_id)
-    perguntas = enquete.pergunta_set.filter(ativa=True).order_by('id')
+    perguntas = enquete.perguntas.filter(ativa=True).order_by('id') 
 
-    perguntas_forms = []
-    for pergunta in perguntas:
-        form = None
-        if pergunta.tipo == Pergunta.UNICA_ESCOLHA:
-            if request.method == 'POST':
-                form = RespostaForm(request.POST, pergunta=pergunta, prefix=f'pergunta_{pergunta.id}')
-            else: 
-                form = RespostaForm(pergunta=pergunta, prefix=f'pergunta_{pergunta.id}')
-        elif pergunta.tipo == Pergunta.MULTIPLA_ESCOLHA:
-            if request.method == 'POST':
-                form = MultiplaEscolhaRespostaForm(request.POST, pergunta=pergunta, prefix=f'pergunta_{pergunta.id}')
-            else: 
-                form = MultiplaEscolhaRespostaForm(pergunta=pergunta, prefix=f'pergunta_{pergunta.id}')
-        else:
-            messages.warning(request, f"Tipo de pergunta desconhecido ou inativo para: {pergunta.texto}")
-            continue 
+    forms_for_template = []
+    
+    if request.method == 'POST':
+        all_forms_valid = True 
 
-        if form: 
-            perguntas_forms.append({'pergunta': pergunta, 'form': form})
+        for pergunta in perguntas:
+            form = RespostaForm(request.POST, pergunta=pergunta, prefix=f'pergunta_{pergunta.id}')
+            forms_for_template.append({'pergunta': pergunta, 'form': form})
+
+            if not form.is_valid():
+                all_forms_valid = False
+
+        if all_forms_valid:
+            try:
+                with transaction.atomic():
+                    aluno = None 
+                    if request.user.is_authenticated:
+                        try:
+                            aluno = request.user.aluno 
+                        except Aluno.DoesNotExist:
+                            messages.info(request, "Criando novo perfil de aluno para seu usuário.")
+                            aluno = Aluno.objects.create(user=request.user, nome=request.user.username)
+                        except Exception as e:
+                            messages.error(request, f"Erro ao tentar obter ou criar perfil de aluno: {e}. As respostas serão salvas sem vinculação a um aluno específico.")
+                            aluno = None 
+
+                    for item in forms_for_template:
+                        pergunta_atual = item['pergunta']
+                        form_atual = item['form']
+                        
+                        campo_dinamico_nome = f'pergunta_{pergunta_atual.id}'
+
+                        if pergunta_atual.tipo == Pergunta.UNICA_ESCOLHA:
+                            opcao_selecionada = form_atual.cleaned_data.get(campo_dinamico_nome)
+                            if opcao_selecionada: 
+                                Resposta.objects.create(
+                                    pergunta=pergunta_atual,
+                                    opcao=opcao_selecionada,
+                                    aluno=aluno 
+                                )
+
+                        elif pergunta_atual.tipo == Pergunta.MULTIPLA_ESCOLHA:
+                            opcoes_selecionadas = form_atual.cleaned_data.get(campo_dinamico_nome)
+                            if opcoes_selecionadas: 
+                                multipla_resposta = MultiplaEscolhaResposta.objects.create(
+                                    pergunta=pergunta_atual,
+                                    aluno=aluno 
+                                )
+                                multipla_resposta.opcoes.set(opcoes_selecionadas) 
+
+                        else:
+                            messages.warning(request, f"Tipo de pergunta '{pergunta_atual.tipo}' desconhecido para: {pergunta_atual.texto}. Nenhuma resposta foi processada para esta pergunta.")
+                
+                messages.success(request, "Enquete respondida com sucesso! Obrigado pela sua participação.")
+                return redirect(reverse('enquete:processar_resposta', args=[enquete_id]))
+
+            except IntegrityError as e:
+                messages.error(request, f"Erro de integridade ao salvar respostas: {e}. Pode haver uma resposta duplicada ou problema de relacionamento. Por favor, tente novamente.")
+                all_forms_valid = False
+            except Exception as e:
+                messages.error(request, f"Ocorreu um erro inesperado ao salvar as respostas: {e}. Por favor, entre em contato com o suporte.")
+                all_forms_valid = False 
+
+        if not all_forms_valid:
+            messages.error(request, "Houve erros ao salvar suas respostas. Por favor, verifique os campos destacados e tente novamente.")
+
+    else: 
+        for pergunta in perguntas:
+            form = RespostaForm(pergunta=pergunta, prefix=f'pergunta_{pergunta.id}')
+            forms_for_template.append({'pergunta': pergunta, 'form': form})
 
     context = {
         'enquete': enquete,
-        'perguntas_forms': perguntas_forms,
-        'Pergunta': Pergunta, 
+        'perguntas_forms': forms_for_template, 
     }
     return render(request, 'enquete/responder_enquete.html', context)
 
 
-def processar_respostas(request, enquete_id):
-    if request.method == 'POST':
-        enquete = get_object_or_404(Enquete, pk=enquete_id)
-        perguntas = enquete.pergunta_set.filter(ativa=True).order_by('id')
-        
-        aluno = None
-        if request.user.is_authenticated:
-            try:
-                aluno = request.user.aluno
-            except Aluno.DoesNotExist:
-                messages.info(request, "Seu perfil de aluno não foi encontrado. Criando um para você.")
-                aluno = Aluno.objects.create(user=request.user, nome=request.user.username)
-            except Exception as e:
-                messages.error(request, f"Erro ao tentar obter ou criar perfil de aluno: {e}. As respostas serão salvas sem vinculação a um aluno específico.")
-                aluno = None 
-        
-        respostas_validas = True
-        
-        for pergunta in perguntas:
-            form = None 
-            if pergunta.tipo == Pergunta.UNICA_ESCOLHA:
-                form = RespostaForm(request.POST, pergunta=pergunta, prefix=f'pergunta_{pergunta.id}')
-                if form.is_valid():
-                    opcao_selecionada = form.cleaned_data['opcao']
-                    Resposta.objects.create(
-                        aluno=aluno,
-                        pergunta=pergunta,
-                        opcao=opcao_selecionada
-                    )
-                else:
-                    respostas_validas = False
-                    messages.error(request, f"Erro na pergunta '{pergunta.texto}': {form.errors.as_text()}") # Use .as_text() para melhor formatação
-            elif pergunta.tipo == Pergunta.MULTIPLA_ESCOLHA:
-                form = MultiplaEscolhaRespostaForm(request.POST, pergunta=pergunta, prefix=f'pergunta_{pergunta.id}')
-                if form.is_valid():
-                    opcoes_selecionadas = form.cleaned_data['opcoes']
-                    multipla_resposta = MultiplaEscolhaResposta.objects.create(
-                        aluno=aluno,
-                        pergunta=pergunta
-                    )
-                    multipla_resposta.opcoes.set(opcoes_selecionadas)
-                else:
-                    respostas_validas = False
-                    messages.error(request, f"Erro na pergunta '{pergunta.texto}': {form.errors.as_text()}") # Use .as_text() para melhor formatação
-            else:
-                messages.warning(request, f"Tipo de pergunta desconhecido ou inativo para: {pergunta.texto}. Nenhuma resposta foi processada para esta pergunta.")
-        
-        if respostas_validas:
-            messages.success(request, "Suas respostas foram salvas com sucesso!")
-            return redirect('enquete:enquete_list') 
-        else:
-            messages.error(request, "Houve erros ao salvar suas respostas. Por favor, verifique.")
-            return responder_enquete(request, enquete_id)
-
-    return HttpResponseBadRequest("Método não permitido.")
+def processar_resposta(request, enquete_id):
+    enquete = get_object_or_404(Enquete, pk=enquete_id)
+    context = {
+        'enquete': enquete,
+    }
+    return render(request, 'enquete/processar_resposta.html', context)

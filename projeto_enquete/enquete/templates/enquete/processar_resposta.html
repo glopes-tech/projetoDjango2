@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block title %}Enquete Respondida - {{ enquete.titulo }}{% endblock %}
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-success text-white">
+                    <h1 class="card-title mb-0">Resposta Registrada!</h1>
+                </div>
+                <div class="card-body text-center">
+                    <p class="lead">
+                        {% if mensagem_sucesso %}
+                            {{ mensagem_sucesso }}
+                        {% else %}
+                            Sua participação na enquete "{{ enquete.titulo }}" foi registrada com sucesso!
+                        {% endif %}
+                    </p>
+                    <p>Obrigado por suas valiosas respostas.</p>
+                    <hr>
+                    <a href="{% url 'enquete:enquete_list' %}" class="btn btn-primary mt-3">Voltar para a Lista de Enquetes</a>
+                    </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

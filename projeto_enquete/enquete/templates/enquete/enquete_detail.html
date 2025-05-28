@@ -20,7 +20,7 @@
     <a href="{% url 'enquete:pergunta_criar' enquete.id %}" class="btn btn-success">Adicionar Pergunta</a>
     <h2>Perguntas:</h2>
     <ul>
-        {% for pergunta in enquete.pergunta_set.all %}
+        {% for pergunta in enquete.perguntas.all.all %}
             <li><a href="{% url 'enquete:pergunta_detail' pergunta.pk %}">{{ pergunta.texto|truncatechars:50 }}</a></li>
         {% empty %}
             <li>Nenhuma pergunta nesta enquete.</li>
