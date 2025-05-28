@@ -221,7 +221,7 @@ async def get_enquetes(skip: int = 0, limit: int = 10, search: Optional[str] = Q
     enquetes_data = []
     for enquete in enquetes_list:
         perguntas_data = []
-        perguntas_qs = await sync_to_async(enquete.perguntas.all.filter)(ativa=True)
+        perguntas_qs = await sync_to_async(lambda: enquete.perguntas.filter(ativa=True))()
         for pergunta in await sync_to_async(list)(perguntas_qs):
             opcoes_data = []
             opcoes_qs = await sync_to_async(pergunta.opcao_set.filter)(ativa=True)
